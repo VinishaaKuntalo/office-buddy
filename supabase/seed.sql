@@ -1,0 +1,3 @@
+-- No global/demo records are seeded. The auth.users bootstrap trigger creates
+-- a private default profile, policy, assignment, and notification preference
+-- for each authenticated account.
