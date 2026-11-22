@@ -25,7 +25,7 @@ Use a disposable Supabase project and two test accounts.
 - [ ] Three office days complete the weekly target; “You can chill” is not shown early.
 - [ ] Monday/Friday count when enabled; preferred days only affect recommendation.
 - [ ] Remote/not-in-office events do not count as attendance.
-- [ ] Absence and holiday reduce the target once only when eligible and enabled; adjusted target never goes below zero.
+- [ ] Absence and holiday are credited once only when eligible and enabled; a week with 2 office days + 1 approved absence shows 3/3 and "You can chill". With the Settings toggles off, the same week shows 2/3.
 - [ ] Final Monday is assigned to the ending reporting month and preceding reporting week; following reporting cycle starts Tuesday.
 - [ ] Calendar keyboard arrows move one day or one week; status has text as well as color.
 - [ ] Manual entries/absences/holidays can be edited/deleted with confirmation; imported attendance is read-only.

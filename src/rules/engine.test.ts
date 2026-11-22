@@ -83,7 +83,8 @@ describe('attendance rules engine', () => {
     });
     expect(result.adjustedRequirement).toBe(2);
     expect(result.remainingOfficeDays).toBe(0);
-    expect(result.weekly.explanationMessages[0]).toContain('target to 2');
+    expect(result.weekly.explanationMessages[0]).toContain('counted toward your target of 3 days');
+    expect(result.creditedDays).toBe(1);
   });
 
   it('reduces for a holiday on an eligible weekday', () => {
@@ -98,6 +99,17 @@ describe('attendance rules engine', () => {
     });
     expect(result.completedOfficeDays).toBe(2);
     expect(result.remainingOfficeDays).toBe(0);
+  });
+
+  it('does not credit absences or holidays when those toggles are off', () => {
+    const result = evaluate('2026-11-27', [event('2026-11-24'), event('2026-11-25')], {
+      policy: { ...policy, reduce_for_approved_absences: false, reduce_for_holidays: false },
+      approvedAbsences: [absence('2026-11-26')],
+      holidays: [holiday('2026-11-23')],
+    });
+    expect(result.adjustedRequirement).toBe(3);
+    expect(result.remainingOfficeDays).toBe(1);
+    expect(result.canChill).toBe(false);
   });
 
   it('never reduces the target below zero', () => {
@@ -138,7 +150,7 @@ describe('attendance rules engine', () => {
       event('2026-11-23'), event('2026-11-24'), event('2026-11-25'), event('2026-11-26'), event('2026-11-27'),
     ]);
     expect(result.completedOfficeDays).toBe(5);
-    expect(result.weekly.explanationMessages.join(' ')).toContain('above the adjusted target');
+    expect(result.weekly.explanationMessages.join(' ')).toContain('above your target');
   });
 
   it.each([

@@ -22,6 +22,8 @@ export function Settings() {
   const [preferredDays, setPreferredDays] = useState(data.policy.preferred_weekdays);
   const [eligibleDays, setEligibleDays] = useState(data.policy.eligible_weekdays);
   const [monthEndRule, setMonthEndRule] = useState(data.policy.month_end_rule);
+  const [reduceForAbsences, setReduceForAbsences] = useState(data.policy.reduce_for_approved_absences);
+  const [reduceForHolidays, setReduceForHolidays] = useState(data.policy.reduce_for_holidays);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
@@ -59,6 +61,8 @@ export function Settings() {
           preferred_weekdays: preferredDays,
           eligible_weekdays: eligibleDays,
           month_end_rule: monthEndRule,
+          reduce_for_approved_absences: reduceForAbsences,
+          reduce_for_holidays: reduceForHolidays,
         }, todayInTimezone(timezone)),
       ]);
       await refresh();
@@ -99,6 +103,9 @@ export function Settings() {
           <Field label="Month-end Monday rule"><select className="form-select" value={monthEndRule} onChange={(event) => setMonthEndRule(event.target.value as typeof monthEndRule)}><option value="month_end_monday_to_previous_month">Final Monday counts toward ending month</option><option value="calendar_month">Use actual calendar month</option></select></Field></div>
         <DayChoices title="Preferred days" selected={preferredDays} onToggle={(day) => toggle(day, preferredDays, setPreferredDays)} />
         <DayChoices title="Eligible days" selected={eligibleDays} onToggle={(day) => toggle(day, eligibleDays, setEligibleDays)} />
+        <label className="mt-5 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={reduceForAbsences} onChange={(event) => setReduceForAbsences(event.target.checked)} />Approved absences / sick leave count toward my weekly target</label>
+        <label className="mt-3 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={reduceForHolidays} onChange={(event) => setReduceForHolidays(event.target.checked)} />Holidays count toward my weekly target</label>
+        <p className="mt-2 text-xs text-slate-500">When on, each absence or holiday on an eligible weekday counts as one of your {requiredDays} {requiredDays === 1 ? 'day' : 'days'} (e.g. 2 in office + 1 sick day = {requiredDays}/{requiredDays}). When off, you need {requiredDays} actual office {requiredDays === 1 ? 'day' : 'days'}. Changes apply from today onward.</p>
         <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">Changing a policy updates the active policy record. Historical versioned policies are supported by the database and rules engine.</p>
       </Card>
       <Card><h2 className="font-bold text-navy">Reminders</h2><label className="mt-4 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={inAppEnabled} onChange={(event) => setInAppEnabled(event.target.checked)} />Show status notifications in the app</label>

@@ -7,7 +7,7 @@ Office Buddy helps you see how many office days you have completed, what remains
 - Email/password sign-up, sign-in, email confirmation, password reset, and sign-out.
 - Per-user profile, timezone, office location, versioned attendance policy, and reminder preference.
 - Manual office/remote/not-in-office entries, approved absences, and holidays.
-- Weekly status and recommendation, adjusted for eligible absences and holidays.
+- Weekly status and recommendation. Approved absences and holidays on eligible weekdays count toward the weekly target (e.g. 2 office days + 1 sick day = 3/3); each can be turned off in Settings.
 - Reporting-month and reporting-week assignment for the final Monday of a month.
 - Responsive calendar, paginated history, settings, CSV preview/import, and in-app status notifications.
 - Optional email reminders (weekly plan + evening-before nudges) sent by an hourly GitHub Actions job via Resend.

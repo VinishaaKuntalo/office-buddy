@@ -49,7 +49,7 @@ describe('Dashboard', () => {
     expect(screen.getByText('Your weekly office requirement is complete.')).toBeInTheDocument();
   });
 
-  it('explains completion against the adjusted absence target', () => {
+  it('counts an approved holiday toward the full weekly target', () => {
     mocks.today = '2026-11-26';
     const data = testUserData([testEvent('2026-11-24'), testEvent('2026-11-25')]);
     data.holidays = [{
@@ -65,7 +65,7 @@ describe('Dashboard', () => {
     }];
     mocks.outlet = { data, refresh: vi.fn() };
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
-    expect(screen.getByRole('heading', { name: 'Adjusted target complete' })).toBeInTheDocument();
-    expect(screen.getByText('Your adjusted weekly requirement is complete. You can chill for the rest of this week.')).toBeInTheDocument();
+    expect(screen.getByText('Your weekly target is complete, including approved absences or holidays. You can chill for the rest of this week.')).toBeInTheDocument();
+    expect(screen.getByText('2 in office + 1 absence/holiday')).toBeInTheDocument();
   });
 });

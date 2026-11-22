@@ -62,12 +62,12 @@ export function planReminders(context: ReminderContext): PlannedReminder[] {
   const todayResult = evaluateOn(today, context);
   if (today === todayResult.reportingWeek.start && time >= WEEKLY_PLAN_TIME && todayResult.remainingOfficeDays > 0) {
     const planned = recommendedOfficeDates(todayResult, context.policy);
-    const adjustment = todayResult.weekly.explanationMessages.find((message) => message.startsWith('Your normal target is'));
+    const adjustment = todayResult.weekly.explanationMessages.find((message) => message.includes('counted toward your target'));
     reminders.push({
       deduplicationKey: `email:weekly-plan:${todayResult.reportingWeek.start}`,
       title: `This week: ${days(todayResult.remainingOfficeDays)} needed`,
       message: [
-        `You need ${days(todayResult.remainingOfficeDays)} this week (${todayResult.completedOfficeDays}/${todayResult.adjustedRequirement} done).`,
+        `You need ${days(todayResult.remainingOfficeDays)} this week (${todayResult.completedOfficeDays + todayResult.creditedDays}/${todayResult.normalRequirement} done).`,
         planned.length > 0 ? `Suggested: ${planned.map(longDate).join(', ')}.` : 'No eligible office days remain this week.',
         adjustment,
       ].filter(Boolean).join(' '),
@@ -81,7 +81,7 @@ export function planReminders(context: ReminderContext): PlannedReminder[] {
       deduplicationKey: `email:day-before:${tomorrow}`,
       title: 'Office day tomorrow',
       message: `${longDate(tomorrow)} is one of your suggested office days. `
-        + `${tomorrowResult.completedOfficeDays}/${tomorrowResult.adjustedRequirement} done, ${days(tomorrowResult.remainingOfficeDays)} still needed this week.`,
+        + `${tomorrowResult.completedOfficeDays + tomorrowResult.creditedDays}/${tomorrowResult.normalRequirement} done, ${days(tomorrowResult.remainingOfficeDays)} still needed this week.`,
     });
   }
   return reminders;

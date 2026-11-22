@@ -24,7 +24,7 @@ This same interpretation applies to Monday **August 31, 2026**. A Monday that is
 
 - Only `in_office` events on eligible weekdays count. Duplicate events on a date count once.
 - Preferred weekdays affect recommendations only; any eligible weekday can count.
-- A unique eligible date with an approved absence or holiday reduces the target only when the corresponding policy toggle is enabled. Overlap is subtracted once, and the target is floored at zero.
+- A unique eligible date with an approved absence or holiday is credited toward the target only when the corresponding policy toggle is enabled (both default to on and can be changed in Settings). Overlap is credited once, and credits never exceed the target. Internally `adjustedRequirement = normal − credited` and `remaining = adjusted − office days`; the UI displays `(office days + creditedDays) / normalRequirement`.
 - Weekends reduce a target only if they are eligible under the effective policy.
 - Requirements use the policy effective on the current date; eligible weekdays and adjustment toggles use the effective policy for each date. Monthly expected attendance is prorated across eligible reporting dates and rounded up.
 - Status considers the remaining eligible dates: enough remaining dates can be `On track`; too few means `At risk`; none with work remaining means `Action required`. A partial week alone is not proof of being on track.

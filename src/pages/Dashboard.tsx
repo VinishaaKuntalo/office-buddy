@@ -63,25 +63,20 @@ export function Dashboard() {
     user,
   ]);
 
-  const adjustedTargetComplete = result.canChill && result.adjustedRequirement < result.normalRequirement;
-  const title = adjustedTargetComplete
-    ? 'Adjusted target complete'
-    : result.canChill
-      ? 'You can chill'
-    : result.remainingOfficeDays === 0
-      ? 'Adjusted target complete'
-      : result.completedOfficeDays === 0
-        ? 'Plan your office days'
-        : `${result.remainingOfficeDays} more office ${result.remainingOfficeDays === 1 ? 'day' : 'days'} needed`;
+  const doneDays = result.completedOfficeDays + result.creditedDays;
+  const target = result.normalRequirement;
+  const title = result.canChill || result.remainingOfficeDays === 0
+    ? 'You can chill'
+    : doneDays === 0
+      ? 'Plan your office days'
+      : `${result.remainingOfficeDays} more office ${result.remainingOfficeDays === 1 ? 'day' : 'days'} needed`;
   const message = result.canChill
-    ? adjustedTargetComplete
-      ? 'Your adjusted weekly requirement is complete. You can chill for the rest of this week.'
+    ? result.creditedDays > 0
+      ? 'Your weekly target is complete, including approved absences or holidays. You can chill for the rest of this week.'
       : 'Your weekly office requirement is complete.'
     : result.recommendedNextOfficeDate
       ? `${format(parseISO(`${result.recommendedNextOfficeDate}T00:00:00`), 'EEEE, MMMM d')} is your recommended next office day.`
-      : result.remainingOfficeDays > 0
-        ? 'No eligible office days remain this week. Review your attendance or policy.'
-        : 'Your adjusted weekly requirement is complete.';
+      : 'No eligible office days remain this week. Review your attendance or policy.';
 
   return <>
     <PageTitle title={`Good ${getGreeting()}, ${data.profile.display_name || 'there'}`} description="Here’s your office week at a glance." action={<Button onClick={() => setShowQuickAdd(true)}><DoorOpen size={17} /> Add a date</Button>} />
@@ -92,8 +87,8 @@ export function Dashboard() {
           {result.explanationMessages.length > 0 && <p className="mt-3 max-w-xl text-sm text-slate-300">{result.explanationMessages[0]}</p>}
         </div>
         <div className="flex items-center gap-4 rounded-2xl bg-white/10 p-4 md:min-w-48 md:flex-col md:gap-1 md:text-center">
-          <div className="text-4xl font-bold">{result.completedOfficeDays}<span className="text-slate-400">/{result.adjustedRequirement}</span></div>
-          <div><div className="text-sm font-semibold">office days</div><div className="text-xs text-slate-300">{result.remainingOfficeDays} remaining</div></div>
+          <div className="text-4xl font-bold">{doneDays}<span className="text-slate-400">/{target}</span></div>
+          <div><div className="text-sm font-semibold">days done</div><div className="text-xs text-slate-300">{result.remainingOfficeDays} remaining</div></div>
         </div>
       </div>
       <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-5 text-sm">
@@ -103,7 +98,7 @@ export function Dashboard() {
     </Card>
 
     <div className="mt-5 grid gap-4 sm:grid-cols-2">
-      <Card><div className="flex items-center justify-between"><div><p className="text-sm text-slate-500">This week</p><p className="mt-1 text-2xl font-bold text-navy">{result.completedOfficeDays} <span className="text-base font-medium text-slate-400">/ {result.adjustedRequirement}</span></p><p className="mt-1 text-sm text-slate-500">Adjusted required office days</p></div><CalendarCheck2 className="text-mint" size={24} /></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-mint transition-all" style={{ width: `${result.adjustedRequirement === 0 ? 100 : Math.min(100, result.completedOfficeDays / result.adjustedRequirement * 100)}%` }} /></div></Card>
+      <Card><div className="flex items-center justify-between"><div><p className="text-sm text-slate-500">This week</p><p className="mt-1 text-2xl font-bold text-navy">{doneDays} <span className="text-base font-medium text-slate-400">/ {target}</span></p><p className="mt-1 text-sm text-slate-500">{result.creditedDays > 0 ? `${result.completedOfficeDays} in office + ${result.creditedDays} absence/holiday` : 'Office days this week'}</p></div><CalendarCheck2 className="text-mint" size={24} /></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-mint transition-all" style={{ width: `${target === 0 ? 100 : Math.min(100, doneDays / target * 100)}%` }} /></div></Card>
       <Card><div className="flex items-center justify-between"><div><p className="text-sm text-slate-500">This month</p><p className="mt-1 text-2xl font-bold text-navy">{monthEvents} <span className="text-base font-medium text-slate-400">attended</span></p><p className="mt-1 text-sm text-slate-500">Reporting month: {format(parseISO(`${result.reportingMonth}-01T00:00:00`), 'MMMM yyyy')}</p></div><CalendarClock className="text-blue-600" size={24} /></div><Link to="/app/insights" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-mint hover:underline">View monthly progress <ArrowRight size={15} /></Link></Card>
     </div>
 

@@ -21,8 +21,9 @@ export function Insights() {
     currentDate: today,
   });
   const monthAttendance = result.monthly.completedOfficeDays;
-  const attendedPercent = result.monthly.adjustedRequirement > 0
-    ? Math.round((monthAttendance / result.monthly.adjustedRequirement) * 100)
+  const monthDone = monthAttendance + result.monthly.creditedDays;
+  const attendedPercent = result.monthly.normalRequirement > 0
+    ? Math.round((monthDone / result.monthly.normalRequirement) * 100)
     : 0;
   const policyForDate = (date: string) => data.policies.find((policy) =>
     policy.effective_from <= date && (!policy.effective_to || policy.effective_to >= date),
@@ -60,9 +61,9 @@ export function Insights() {
   return <>
     <PageTitle title="Weekly insights" description="See the numbers behind your recommendation." />
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Metric title="Normal weekly target" value={`${result.normalRequirement} days`} />
-      <Metric title="Adjusted target" value={`${result.adjustedRequirement} days`} />
-      <Metric title="Completed" value={`${result.completedOfficeDays} days`} />
+      <Metric title="Weekly target" value={`${result.normalRequirement} days`} />
+      <Metric title="Office days" value={`${result.completedOfficeDays} days`} />
+      <Metric title="Absences & holidays counted" value={`${result.creditedDays} days`} />
       <Metric title="Still needed" value={`${result.remainingOfficeDays} days`} />
     </div>
     <Card className="mt-5">
@@ -79,14 +80,14 @@ export function Insights() {
     <PageTitle title="Monthly insights" description={`Reporting month: ${format(parseISO(`${result.reportingMonth}-01T00:00:00`), 'MMMM yyyy')}`} />
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Metric title="Office attendance" value={`${monthAttendance} days`} />
-      <Metric title="Adjusted expected" value={`${result.monthly.adjustedRequirement} days`} />
+      <Metric title="Expected" value={`${result.monthly.normalRequirement} days`} />
       <Metric title="Approved absence dates" value={`${monthAbsenceDates.size}`} />
       <Metric title="Holiday dates" value={`${monthHolidayDates.size}`} />
     </div>
     <Card className="mt-5">
-      <div className="flex items-start justify-between gap-4"><div><h2 className="font-bold text-navy">Month progress</h2><p className="mt-1 text-sm text-slate-500">Attendance as a share of your adjusted expected total.</p></div><strong className="text-xl text-navy">{result.monthly.adjustedRequirement === 0 ? '—' : `${attendedPercent}%`}</strong></div>
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-mint" style={{ width: `${result.monthly.adjustedRequirement === 0 ? 0 : Math.min(attendedPercent, 100)}%` }} /></div>
-      <p className="mt-2 text-xs text-slate-500">You attended {monthAttendance} of {result.monthly.adjustedRequirement} adjusted expected office days{attendedPercent > 100 ? ' (over target)' : ''}.</p>
+      <div className="flex items-start justify-between gap-4"><div><h2 className="font-bold text-navy">Month progress</h2>      <p className="mt-1 text-sm text-slate-500">Office days plus counted absences and holidays, as a share of your expected total.</p></div><strong className="text-xl text-navy">{result.monthly.normalRequirement === 0 ? '—' : `${attendedPercent}%`}</strong></div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-mint" style={{ width: `${result.monthly.normalRequirement === 0 ? 0 : Math.min(attendedPercent, 100)}%` }} /></div>
+            <p className="mt-2 text-xs text-slate-500">{monthDone} of {result.monthly.normalRequirement} expected days complete ({monthAttendance} in office{result.monthly.creditedDays > 0 ? `, ${result.monthly.creditedDays} absence/holiday` : ''}){attendedPercent > 100 ? ' (over target)' : ''}.</p>
       <p className="mt-4 text-xs leading-5 text-slate-500">The month-end Monday reporting rule assigns a final Monday’s attendance to the ending month without changing the recorded date. {result.explanationMessages.find((message) => message.includes('month-end')) ?? ''}</p>
       <div className="mt-6 border-t border-slate-100 pt-4"><h3 className="text-sm font-bold text-navy">Week-by-week attendance</h3>
         {weeklyBreakdown.length === 0 ? <p className="mt-2 text-sm text-slate-500">No office attendance recorded in this reporting month yet.</p> : <ul className="mt-2 divide-y divide-slate-100">{weeklyBreakdown.map((week) => <li key={`${week.start}-${week.end}`} className="flex items-center justify-between py-2 text-sm"><span>{format(parseISO(`${week.start}T00:00:00`), 'MMM d')} – {format(parseISO(`${week.end}T00:00:00`), 'MMM d')}</span><strong className="text-navy">{week.count} office day{week.count === 1 ? '' : 's'}</strong></li>)}</ul>}

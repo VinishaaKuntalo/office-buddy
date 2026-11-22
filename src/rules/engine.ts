@@ -23,6 +23,7 @@ export interface PeriodProgress {
   end: string;
   normalRequirement: number;
   adjustedRequirement: number;
+  creditedDays: number;
   completedOfficeDays: number;
   remainingOfficeDays: number;
   eligibleRemainingDates: string[];
@@ -46,6 +47,8 @@ export interface AttendanceReportingAssignment {
 export interface RulesResult {
   normalRequirement: number;
   adjustedRequirement: number;
+  /** Eligible approved-absence/holiday dates counted toward the normal target. */
+  creditedDays: number;
   completedOfficeDays: number;
   remainingOfficeDays: number;
   weeklyStatus: ProgressStatus;
@@ -154,6 +157,7 @@ function progress(input: {
     );
   });
   const adjustedRequirement = Math.max(0, input.normalRequirement - reducingDates.length);
+  const creditedDays = input.normalRequirement - adjustedRequirement;
   const remainingOfficeDays = Math.max(0, adjustedRequirement - completedOfficeDays);
   const eligibleRemainingDates = eligible.filter((date) =>
     date >= input.currentDate
@@ -169,22 +173,22 @@ function progress(input: {
     end: input.end,
   });
   const explanationMessages: string[] = [];
-  if (reducingDates.length > 0) {
+  if (creditedDays > 0) {
     explanationMessages.push(
-      `Your normal target is ${input.normalRequirement} ${input.normalRequirement === 1 ? 'day' : 'days'}. `
-      + `${reducingDates.length} eligible approved ${reducingDates.length === 1 ? 'absence or holiday date reduced' : 'absence or holiday dates reduced'} `
-      + `this period's target to ${adjustedRequirement}.`,
+      `${creditedDays} approved absence or holiday ${creditedDays === 1 ? 'date' : 'dates'} `
+      + `counted toward your target of ${input.normalRequirement} ${input.normalRequirement === 1 ? 'day' : 'days'}.`,
     );
   }
   if (completedOfficeDays > adjustedRequirement) {
     const extraDays = completedOfficeDays - adjustedRequirement;
-    explanationMessages.push(`You attended ${extraDays} ${extraDays === 1 ? 'day' : 'days'} above the adjusted target.`);
+    explanationMessages.push(`You attended ${extraDays} ${extraDays === 1 ? 'day' : 'days'} above your target.`);
   }
   return {
     start: input.start,
     end: input.end,
     normalRequirement: input.normalRequirement,
     adjustedRequirement,
+    creditedDays,
     completedOfficeDays,
     remainingOfficeDays,
     eligibleRemainingDates,
@@ -312,6 +316,7 @@ export function evaluateAttendance(input: RulesInput): RulesResult {
   return {
     normalRequirement: weekly.normalRequirement,
     adjustedRequirement: weekly.adjustedRequirement,
+    creditedDays: weekly.creditedDays,
     completedOfficeDays: weekly.completedOfficeDays,
     remainingOfficeDays: weekly.remainingOfficeDays,
     weeklyStatus,
@@ -328,7 +333,8 @@ export function evaluateAttendance(input: RulesInput): RulesResult {
     explanationMessages: explanations,
     canChill: weekly.remainingOfficeDays === 0,
     reasons: [
-      `${weekly.completedOfficeDays} of ${weekly.adjustedRequirement} adjusted weekly office days are complete.`,
+      `${weekly.completedOfficeDays + weekly.creditedDays} of ${weekly.normalRequirement} weekly days are complete`
+        + (weekly.creditedDays > 0 ? ` (${weekly.completedOfficeDays} in office, ${weekly.creditedDays} approved absence or holiday).` : '.'),
       `${weekly.remainingOfficeDays} office ${weekly.remainingOfficeDays === 1 ? 'day is' : 'days are'} still needed this week.`,
       `${eligibleRemainingDates.length} eligible office ${eligibleRemainingDates.length === 1 ? 'date remains' : 'dates remain'} this week.`,
     ],

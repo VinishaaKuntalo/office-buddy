@@ -188,6 +188,8 @@ export async function savePolicy(input: Partial<AttendancePolicy>, effectiveFrom
     p_month_end_rule: input.month_end_rule ?? 'month_end_monday_to_previous_month',
     p_effective_from: effectiveFrom,
     p_name: input.name ?? 'Personal policy',
+    p_reduce_for_approved_absences: input.reduce_for_approved_absences,
+    p_reduce_for_holidays: input.reduce_for_holidays,
   });
   if (error) throw error;
 }
@@ -293,7 +295,7 @@ export async function syncStatusNotifications(userId: string, result: RulesResul
       notification_type: 'weekly_target_complete',
       deduplication_key: `weekly-complete:${weekKey}`,
       title: 'Weekly target complete',
-      message: 'You completed your adjusted office target. You can chill for the rest of the week.',
+      message: 'You completed your weekly office target. You can chill for the rest of the week.',
     });
   }
   if (result.monthly.status === 'Complete') {
@@ -301,15 +303,15 @@ export async function syncStatusNotifications(userId: string, result: RulesResul
       notification_type: 'monthly_target_complete',
       deduplication_key: `monthly-complete:${result.reportingMonth}`,
       title: 'Monthly target complete',
-      message: `You have completed your adjusted expected office attendance for ${result.reportingMonth}.`,
+      message: `You have completed your expected office attendance for ${result.reportingMonth}.`,
     });
   }
-  const adjustmentMessage = result.weekly.explanationMessages.find((message) => message.startsWith('Your normal target is'));
+  const adjustmentMessage = result.weekly.explanationMessages.find((message) => message.includes('counted toward your target'));
   if (adjustmentMessage) {
     notices.push({
       notification_type: 'approved_absence_adjustment',
       deduplication_key: `weekly-adjustment:${weekKey}`,
-      title: 'Your weekly target was adjusted',
+      title: 'Absence or holiday counted this week',
       message: adjustmentMessage,
     });
   }
