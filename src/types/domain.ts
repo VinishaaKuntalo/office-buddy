@@ -92,6 +92,7 @@ export interface NotificationPreferences {
   user_id: string;
   in_app_enabled: boolean;
   office_reminder_enabled: boolean;
+  email_enabled: boolean;
   reminder_time: string;
   checkin_time: string;
   reminder_timezone: string;
@@ -125,6 +126,7 @@ export interface Database {
       notification_log: Table<NotificationItem & { updated_at: string }>;
       import_batches: Table<{ id: string; user_id: string; file_name: string; status: 'completed' | 'cancelled'; inserted_count: number; skipped_count: number; rejected_count: number; created_at: string; updated_at: string }>;
       audit_log: Table<{ id: string; user_id: string; entity_type: string; entity_id: string; action: 'insert' | 'update' | 'delete'; details: Record<string, unknown>; created_at: string }>;
+      push_subscriptions: Table<{ id: string; user_id: string; endpoint: string; p256dh: string; auth: string; user_agent: string; created_at: string }>;
     };
     Views: Record<string, never>;
     Functions: {

@@ -51,6 +51,7 @@ export function testUserData(attendance: AttendanceEvent[] = []): UserData {
       user_id: 'user-1',
       in_app_enabled: true,
       office_reminder_enabled: false,
+      email_enabled: true,
       reminder_time: '17:00',
       checkin_time: '16:00',
       reminder_timezone: 'America/Toronto',

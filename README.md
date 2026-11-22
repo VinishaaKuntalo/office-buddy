@@ -164,7 +164,11 @@ The static hosts run no background work. Email reminders run separately from Git
 - **Evening-before reminder** at the user's reminder time on the day before each suggested office day. Suggestions are recomputed daily from logged attendance, so skipped days roll forward and reminders continue for the rest of the week until the target is met.
 - **After-office check-in** at the user's check-in time (default 16:00) on any eligible weekday with nothing logged while the week still needs office days, asking them to tick off the day.
 
-Each reminder is claimed in `notification_log` with a unique `email:…` deduplication key before sending, so it also appears in-app and is never emailed twice. Setup:
+Each reminder is claimed in `notification_log` with a unique `email:…` deduplication key before sending, so it also appears in-app and is never sent twice.
+
+**Push notifications (optional).** Reminders are also sent as Web Push notifications to every device the user enabled in **Settings → Reminders → Push notifications on this device** (stored in `push_subscriptions`; expired subscriptions are removed automatically). **By email** can be switched off for push-only delivery. On iPhone (iOS 16.4+), push works only from the Home Screen app: Share → Add to Home Screen, open it from there, then tap **Enable**. To configure, generate keys with `npx web-push generate-vapid-keys`, then set the public key as the `VITE_VAPID_PUBLIC_KEY` repository variable (and in `.env` for local dev) and the private key as the `VAPID_PRIVATE_KEY` secret.
+
+Email setup:
 
 1. Create a free [Resend](https://resend.com) account and an API key. Without a verified domain, Resend's `onboarding@resend.dev` sender can only deliver to the Resend account's own email, so sign up with the same email you use in Office Buddy (or verify a domain and set the `REMINDER_FROM_EMAIL` variable, e.g. `Office Buddy <reminders@yourdomain.com>`).
 2. In the GitHub repo, **Settings → Secrets and variables → Actions → Secrets**, add `RESEND_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (Supabase **Project Settings → API keys → secret/service_role**). Never put the service-role key in `VITE_*` variables or the browser app.

@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { deleteAccount as deleteAccountRequest, saveNotificationPreferences, saveOfficeLocation, saveProfile, savePolicy } from '../data/repository';
 import type { UserData } from '../data/repository';
 import { isValidTimezone, todayInTimezone } from '../lib/dates';
 import { friendlyError } from '../lib/supabase';
+import { currentPushSubscription, disablePush, enablePush, pushSupport } from '../lib/push';
 import { Alert, Button, Card, Field, PageTitle } from '../components/UI';
 
 interface OutletData { data: UserData; refresh: () => Promise<void> }
@@ -17,6 +18,7 @@ export function Settings() {
   const [officeName, setOfficeName] = useState(data.officeLocation?.name ?? '');
   const [inAppEnabled, setInAppEnabled] = useState(data.notificationPreferences.in_app_enabled);
   const [reminderEnabled, setReminderEnabled] = useState(data.notificationPreferences.office_reminder_enabled);
+  const [emailEnabled, setEmailEnabled] = useState(data.notificationPreferences.email_enabled ?? true);
   const [reminderTime, setReminderTime] = useState(data.notificationPreferences.reminder_time.slice(0, 5));
   const [checkinTime, setCheckinTime] = useState((data.notificationPreferences.checkin_time ?? '16:00').slice(0, 5));
   const [requiredDays, setRequiredDays] = useState(data.policy.required_days_per_week);
@@ -54,6 +56,7 @@ export function Settings() {
         saveNotificationPreferences(user.id, {
           in_app_enabled: inAppEnabled,
           office_reminder_enabled: reminderEnabled,
+          email_enabled: emailEnabled,
           reminder_time: reminderTime,
           checkin_time: checkinTime,
           reminder_timezone: timezone,
@@ -111,15 +114,65 @@ export function Settings() {
         <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">Changing a policy updates the active policy record. Historical versioned policies are supported by the database and rules engine.</p>
       </Card>
       <Card><h2 className="font-bold text-navy">Reminders</h2><label className="mt-4 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={inAppEnabled} onChange={(event) => setInAppEnabled(event.target.checked)} />Show status notifications in the app</label>
-        <label className="mt-3 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={reminderEnabled} onChange={(event) => setReminderEnabled(event.target.checked)} />Email me office reminders</label>
+        <label className="mt-3 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={reminderEnabled} onChange={(event) => setReminderEnabled(event.target.checked)} />Send me office reminders</label>
+        <label className="ml-7 mt-3 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={emailEnabled} disabled={!reminderEnabled} onChange={(event) => setEmailEnabled(event.target.checked)} />By email</label>
+        <div className="ml-7"><PushDevice userId={user?.id} /></div>
         <div className="mt-4 grid max-w-lg gap-4 sm:grid-cols-2"><Field label="Evening reminder time"><input className="form-input" type="time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} /></Field>
           <Field label="After-office check-in time"><input className="form-input" type="time" value={checkinTime} onChange={(event) => setCheckinTime(event.target.value)} /></Field></div>
-        <p className="mt-2 text-xs text-slate-500">You’ll get your weekly plan at 8:00 AM on the first day of each reporting week, and an evening reminder before each suggested office day. If you skip a day, the plan moves to your remaining days, so reminders continue all week until your target is met. At the check-in time, on any eligible weekday you haven’t logged while your week isn’t complete, you’ll get a “Did you go to the office today?” email so you can tick it off. Times use your profile timezone and may arrive up to an hour late.</p>
+        <p className="mt-2 text-xs text-slate-500">You’ll get your weekly plan at 8:00 AM on the first day of each reporting week, and an evening reminder before each suggested office day. If you skip a day, the plan moves to your remaining days, so reminders continue all week until your target is met. At the check-in time, on any eligible weekday you haven’t logged while your week isn’t complete, you’ll get a “Did you go to the office today?” reminder so you can tick it off. Reminders go to every channel you turn on: email and/or push on each device where you tapped Enable. Times use your profile timezone and may arrive up to an hour late.</p>
       </Card>
       <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save settings'}</Button>
     </form>
     <Card className="mt-8 border-red-100"><h2 className="font-bold text-red-800">Account</h2><p className="mt-2 text-sm text-slate-600">Sign out from this device or permanently delete your account and its data.</p><div className="mt-4 flex flex-wrap gap-3"><Button variant="secondary" onClick={() => void signOut()}>Sign out</Button><Button variant="danger" onClick={() => void deleteAccount()}>Delete account</Button></div></Card>
   </>;
+}
+
+function PushDevice({ userId }: { userId?: string }) {
+  const support = pushSupport();
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    void currentPushSubscription().then((subscription) => setEnabled(Boolean(subscription))).catch(() => undefined);
+  }, []);
+
+  async function toggle() {
+    if (!userId) return;
+    setBusy(true);
+    setMessage('');
+    try {
+      if (enabled) {
+        await disablePush();
+        setEnabled(false);
+        setMessage('Push notifications are off on this device.');
+      } else {
+        await enablePush(userId);
+        setEnabled(true);
+        setMessage('Push notifications are on for this device.');
+      }
+    } catch (cause) {
+      setMessage(friendlyError(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const hint = {
+    'needs-home-screen': 'On iPhone, push works only from the Home Screen app: tap Share → Add to Home Screen, open Office Buddy from there, then come back here.',
+    unsupported: 'This browser does not support push notifications.',
+    'not-configured': 'Push notifications are not configured for this deployment.',
+    supported: '',
+  }[support];
+
+  return <div className="mt-3 rounded-xl border border-slate-200 p-3 text-sm text-slate-700">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <span>Push notifications on this device{enabled ? ': on' : ''}</span>
+      {support === 'supported' && <Button type="button" variant="secondary" disabled={busy} onClick={() => void toggle()}>{busy ? 'Working…' : enabled ? 'Turn off' : 'Enable'}</Button>}
+    </div>
+    {hint && <p className="mt-2 text-xs text-slate-500">{hint}</p>}
+    {message && <p className="mt-2 text-xs text-slate-600" role="status">{message}</p>}
+  </div>;
 }
 
 function DayChoices({ title, selected, onToggle }: { title: string; selected: number[]; onToggle: (day: number) => void }) {

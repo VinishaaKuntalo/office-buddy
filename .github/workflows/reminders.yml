@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       send_test:
-        description: Send a one-off test email to every user with reminders on
+        description: Send a one-off test reminder (email and/or push) to every user with reminders on
         type: boolean
         default: false
 
@@ -34,6 +34,8 @@ jobs:
           SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           REMINDER_FROM_EMAIL: ${{ vars.REMINDER_FROM_EMAIL }}
           APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           SEND_TEST_EMAIL: ${{ inputs.send_test }}
