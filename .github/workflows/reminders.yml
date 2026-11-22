@@ -5,6 +5,11 @@ on:
     # Hourly; the script decides per user's timezone what (if anything) is due.
     - cron: '7 * * * *'
   workflow_dispatch:
+    inputs:
+      send_test:
+        description: Send a one-off test email to every user with reminders on
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,3 +36,4 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           REMINDER_FROM_EMAIL: ${{ vars.REMINDER_FROM_EMAIL }}
           APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          SEND_TEST_EMAIL: ${{ inputs.send_test }}

@@ -167,7 +167,7 @@ Each reminder is claimed in `notification_log` with a unique `email:…` dedupli
 
 1. Create a free [Resend](https://resend.com) account and an API key. Without a verified domain, Resend's `onboarding@resend.dev` sender can only deliver to the Resend account's own email, so sign up with the same email you use in Office Buddy (or verify a domain and set the `REMINDER_FROM_EMAIL` variable, e.g. `Office Buddy <reminders@yourdomain.com>`).
 2. In the GitHub repo, **Settings → Secrets and variables → Actions → Secrets**, add `RESEND_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (Supabase **Project Settings → API keys → secret/service_role**). Never put the service-role key in `VITE_*` variables or the browser app.
-3. Run **Send office reminders** once manually from the **Actions** tab to confirm it logs `Checked N users…`.
+3. Run **Send office reminders** once manually from the **Actions** tab with **Send a one-off test email** ticked; it should log `sent 1 emails` and the email should arrive.
 
 GitHub may delay scheduled runs, and it disables schedules in public repos after 60 days without commits; re-enable from the Actions tab if that happens. The job without secrets exits successfully and does nothing.
 

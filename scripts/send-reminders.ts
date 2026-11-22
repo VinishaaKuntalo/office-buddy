@@ -8,6 +8,7 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const resendKey = process.env.RESEND_API_KEY;
 const from = process.env.REMINDER_FROM_EMAIL || 'Office Buddy <onboarding@resend.dev>';
 const appUrl = process.env.APP_URL || '';
+const sendTest = process.env.SEND_TEST_EMAIL === 'true';
 
 if (!supabaseUrl || !serviceRoleKey || !resendKey) {
   console.log('Reminders are not configured (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY). Skipping.');
@@ -70,6 +71,11 @@ async function processUser(userId: string, reminderTime: string, reminderTimezon
   const policy = policies.find((entry) => entry.id === active?.policy_id);
   if (!policy) return 0;
 
+  if (sendTest) {
+    await sendEmail(email, 'Office Buddy reminders are set up',
+      `Reminders are working. You'll get a weekly plan at 08:00 on the first day of each reporting week and a reminder at ${reminderTime.slice(0, 5)} the evening before each suggested office day (${timezone}).`);
+    return 1;
+  }
   const reminders = planReminders({
     now: new Date(), timezone, reminderTime, policy, policies,
     attendance: (check(attendance) ?? []) as AttendanceEvent[],
