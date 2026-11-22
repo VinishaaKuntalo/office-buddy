@@ -9,6 +9,7 @@ export interface ReminderContext {
   now: Date;
   timezone: string;
   reminderTime: string;
+  checkinTime: string;
   policy: AttendancePolicy;
   policies: AttendancePolicy[];
   attendance: AttendanceEvent[];
@@ -71,6 +72,18 @@ export function planReminders(context: ReminderContext): PlannedReminder[] {
         planned.length > 0 ? `Suggested: ${planned.map(longDate).join(', ')}.` : 'No eligible office days remain this week.',
         adjustment,
       ].filter(Boolean).join(' '),
+    });
+  }
+
+  // After-office check-in: any eligible weekday with nothing logged yet while the week still needs office days.
+  const loggedToday = context.attendance.some((event) => event.event_date === today);
+  if (time >= context.checkinTime.slice(0, 5) && !loggedToday
+    && todayResult.remainingOfficeDays > 0 && todayResult.eligibleRemainingDates.includes(today)) {
+    reminders.push({
+      deduplicationKey: `email:checkin:${today}`,
+      title: 'Did you go to the office today?',
+      message: `If you went in today (${longDate(today)}), tick it off in Office Buddy so your week stays accurate. `
+        + `${todayResult.completedOfficeDays + todayResult.creditedDays}/${todayResult.normalRequirement} done so far this week.`,
     });
   }
 

@@ -42,7 +42,7 @@ async function sendEmail(to: string, subject: string, text: string) {
   if (!response.ok) throw new Error(`Resend responded ${response.status}: ${await response.text()}`);
 }
 
-async function processUser(userId: string, reminderTime: string, reminderTimezone: string) {
+async function processUser(userId: string, reminderTime: string, checkinTime: string, reminderTimezone: string) {
   const profile = check(await db.from('profiles').select('timezone,onboarding_completed').eq('id', userId).single());
   if (!profile.onboarding_completed) return 0;
   const timezone = reminderTimezone || profile.timezone;
@@ -73,11 +73,11 @@ async function processUser(userId: string, reminderTime: string, reminderTimezon
 
   if (sendTest) {
     await sendEmail(email, 'Office Buddy reminders are set up',
-      `Reminders are working. You'll get a weekly plan at 08:00 on the first day of each reporting week and a reminder at ${reminderTime.slice(0, 5)} the evening before each suggested office day (${timezone}).`);
+      `Reminders are working. You'll get a weekly plan at 08:00 on the first day of each reporting week, a reminder at ${reminderTime.slice(0, 5)} the evening before each suggested office day, and a check-in at ${checkinTime.slice(0, 5)} on weekdays you haven't logged yet (${timezone}).`);
     return 1;
   }
   const reminders = planReminders({
-    now: new Date(), timezone, reminderTime, policy, policies,
+    now: new Date(), timezone, reminderTime, checkinTime, policy, policies,
     attendance: (check(attendance) ?? []) as AttendanceEvent[],
     absences: (check(absences) ?? []) as ApprovedAbsence[],
     holidays: (check(holidays) ?? []) as Holiday[],
@@ -106,12 +106,12 @@ async function processUser(userId: string, reminderTime: string, reminderTimezon
 }
 
 const preferences = check(await db.from('notification_preferences')
-  .select('user_id,reminder_time,reminder_timezone').eq('office_reminder_enabled', true)) ?? [];
+  .select('user_id,reminder_time,checkin_time,reminder_timezone').eq('office_reminder_enabled', true)) ?? [];
 let sent = 0;
 let failures = 0;
 for (const preference of preferences) {
   try {
-    sent += await processUser(preference.user_id, preference.reminder_time, preference.reminder_timezone);
+    sent += await processUser(preference.user_id, preference.reminder_time, preference.checkin_time ?? '16:00', preference.reminder_timezone);
   } catch (cause) {
     failures += 1;
     console.error(`Reminder failed for one user: ${cause instanceof Error ? cause.message : JSON.stringify(cause)}`);

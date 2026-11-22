@@ -52,6 +52,7 @@ export function testUserData(attendance: AttendanceEvent[] = []): UserData {
       in_app_enabled: true,
       office_reminder_enabled: false,
       reminder_time: '17:00',
+      checkin_time: '16:00',
       reminder_timezone: 'America/Toronto',
     },
     officeLocation: { id: 'office-1', name: 'Downtown' },

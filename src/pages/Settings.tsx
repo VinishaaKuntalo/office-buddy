@@ -18,6 +18,7 @@ export function Settings() {
   const [inAppEnabled, setInAppEnabled] = useState(data.notificationPreferences.in_app_enabled);
   const [reminderEnabled, setReminderEnabled] = useState(data.notificationPreferences.office_reminder_enabled);
   const [reminderTime, setReminderTime] = useState(data.notificationPreferences.reminder_time.slice(0, 5));
+  const [checkinTime, setCheckinTime] = useState((data.notificationPreferences.checkin_time ?? '16:00').slice(0, 5));
   const [requiredDays, setRequiredDays] = useState(data.policy.required_days_per_week);
   const [preferredDays, setPreferredDays] = useState(data.policy.preferred_weekdays);
   const [eligibleDays, setEligibleDays] = useState(data.policy.eligible_weekdays);
@@ -54,6 +55,7 @@ export function Settings() {
           in_app_enabled: inAppEnabled,
           office_reminder_enabled: reminderEnabled,
           reminder_time: reminderTime,
+          checkin_time: checkinTime,
           reminder_timezone: timezone,
         }),
         savePolicy({
@@ -110,8 +112,9 @@ export function Settings() {
       </Card>
       <Card><h2 className="font-bold text-navy">Reminders</h2><label className="mt-4 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={inAppEnabled} onChange={(event) => setInAppEnabled(event.target.checked)} />Show status notifications in the app</label>
         <label className="mt-3 flex items-center gap-3 text-sm text-slate-700"><input className="size-4 rounded border-slate-300 text-mint focus:ring-mint" type="checkbox" checked={reminderEnabled} onChange={(event) => setReminderEnabled(event.target.checked)} />Email me office reminders</label>
-        <div className="mt-4 max-w-xs"><Field label="Evening reminder time"><input className="form-input" type="time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} /></Field></div>
-        <p className="mt-2 text-xs text-slate-500">You’ll get your weekly plan at 8:00 AM on the first day of each reporting week, and a reminder at this time the evening before each suggested office day. Times use your profile timezone and may arrive up to an hour late.</p>
+        <div className="mt-4 grid max-w-lg gap-4 sm:grid-cols-2"><Field label="Evening reminder time"><input className="form-input" type="time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} /></Field>
+          <Field label="After-office check-in time"><input className="form-input" type="time" value={checkinTime} onChange={(event) => setCheckinTime(event.target.value)} /></Field></div>
+        <p className="mt-2 text-xs text-slate-500">You’ll get your weekly plan at 8:00 AM on the first day of each reporting week, and an evening reminder before each suggested office day. If you skip a day, the plan moves to your remaining days, so reminders continue all week until your target is met. At the check-in time, on any eligible weekday you haven’t logged while your week isn’t complete, you’ll get a “Did you go to the office today?” email so you can tick it off. Times use your profile timezone and may arrive up to an hour late.</p>
       </Card>
       <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save settings'}</Button>
     </form>

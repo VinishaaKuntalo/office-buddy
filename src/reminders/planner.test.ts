@@ -16,7 +16,7 @@ const inOffice = (date: string): AttendanceEvent => ({
 
 // November 2026 is UTC-5 in Toronto.
 const plan = (localIso: string, attendance: AttendanceEvent[] = []) => planReminders({
-  now: new Date(`${localIso}-05:00`), timezone: 'America/Toronto', reminderTime: '17:00:00',
+  now: new Date(`${localIso}-05:00`), timezone: 'America/Toronto', reminderTime: '17:00:00', checkinTime: '16:00:00',
   policy, policies: [policy], attendance, absences: [], holidays: [],
 } satisfies ReminderContext);
 
@@ -30,7 +30,24 @@ describe('planReminders', () => {
   it('waits until the configured times', () => {
     expect(plan('2026-11-23T07:30:00')).toEqual([]);
     expect(plan('2026-11-23T17:30:00').map((reminder) => reminder.deduplicationKey))
-      .toEqual(['email:weekly-plan:2026-11-23', 'email:day-before:2026-11-24']);
+      .toEqual(['email:weekly-plan:2026-11-23', 'email:checkin:2026-11-23', 'email:day-before:2026-11-24']);
+  });
+
+  it('keeps reminding for the rest of the week after skipped preferred days', () => {
+    // Skipped Tue 24 and Wed 25: Thu 26 and Fri 27 are now both needed.
+    expect(plan('2026-11-25T17:30:00').map((reminder) => reminder.deduplicationKey)).toContain('email:day-before:2026-11-26');
+    expect(plan('2026-11-26T17:30:00').map((reminder) => reminder.deduplicationKey)).toContain('email:day-before:2026-11-27');
+  });
+
+  it('asks for an after-office check-in only on unlogged eligible days of an incomplete week', () => {
+    const keys = (localIso: string, attendance: AttendanceEvent[] = []) =>
+      plan(localIso, attendance).map((reminder) => reminder.deduplicationKey);
+    expect(keys('2026-11-24T15:30:00')).not.toContain('email:checkin:2026-11-24');
+    expect(keys('2026-11-24T16:05:00')).toContain('email:checkin:2026-11-24');
+    expect(keys('2026-11-24T16:05:00', [inOffice('2026-11-24')])).not.toContain('email:checkin:2026-11-24');
+    expect(keys('2026-11-22T16:05:00')).not.toContain('email:checkin:2026-11-22');
+    const done = ['2026-11-23', '2026-11-24', '2026-11-25'].map(inOffice);
+    expect(keys('2026-11-26T16:05:00', done)).not.toContain('email:checkin:2026-11-26');
   });
 
   it('only sends a day-before reminder for suggested days', () => {

@@ -93,6 +93,7 @@ export interface NotificationPreferences {
   in_app_enabled: boolean;
   office_reminder_enabled: boolean;
   reminder_time: string;
+  checkin_time: string;
   reminder_timezone: string;
 }
 

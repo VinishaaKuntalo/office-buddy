@@ -35,7 +35,7 @@ Use a disposable Supabase project and two test accounts.
 - [ ] History filters and pagination query the server; empty state appears with no rows.
 - [ ] CSV import previews data, shows invalid rows, rejects files over 2 MB or 1,000 rows, skips duplicate IDs, and records batch counts.
 - [ ] In-app notifications appear once per reporting period and can be marked read.
-- [ ] With email reminders on, a manual **Send office reminders** run emails the weekly plan / evening-before reminder once and a second run sends nothing new.
+- [ ] With email reminders on, a manual **Send office reminders** run emails the weekly plan / evening-before reminder / after-office check-in once and a second run sends nothing new.
 - [ ] Account deletion requires confirmation and removes the account's data.
 
 ## Security
