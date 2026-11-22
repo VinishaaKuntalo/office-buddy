@@ -48,8 +48,8 @@ export function AppLayout() {
           </div>
         </div>
       </header>
-      <div className="mx-auto grid max-w-7xl lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav aria-label="Main navigation" className="border-b border-slate-200 bg-white px-3 py-3 lg:min-h-[calc(100vh-4rem)] lg:border-b-0 lg:border-r lg:px-4 lg:py-7">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <nav aria-label="Main navigation" className="min-w-0 border-b border-slate-200 bg-white px-3 py-3 lg:min-h-[calc(100vh-4rem)] lg:border-b-0 lg:border-r lg:px-4 lg:py-7">
           <div className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-1.5">
             {navigation.map(({ to, label, icon: Icon, end }) => (
               <NavLink key={to} to={to} end={end} className={({ isActive }) =>
