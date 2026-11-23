@@ -156,14 +156,14 @@ For an organization/user Pages site served at the domain root, set Vite's `base`
 4. For a root/custom domain, configure Vite `base: '/'`; for a project subpath, match that subpath.
 5. Add the deployed URL to the Supabase Auth redirect allowlist. Hash-based routes need no server rewrite.
 
-The static hosts run no background work. Email reminders run separately from GitHub Actions (see below).
+The static hosts run no background work. Reminders run separately in Supabase (see below).
 
-## Email reminders (GitHub Actions + Resend)
+## Scheduled reminders (Supabase Cron + Edge Function)
 
-[`.github/workflows/reminders.yml`](.github/workflows/reminders.yml) runs `npm run reminders` hourly. For every user with **Settings → Reminders → Email me office reminders** on, [`scripts/send-reminders.ts`](scripts/send-reminders.ts) evaluates the rules engine in the user's timezone and sends:
+Supabase Cron invokes the `send-reminders` Edge Function every minute, even when the app is closed. It uses the same [`scripts/reminder-runner.ts`](scripts/reminder-runner.ts) and rules engine as the manually triggered [GitHub reminder job](.github/workflows/reminders.yml). For every user with **Settings → Reminders → Send me office reminders** on, it evaluates attendance in the user's timezone and sends:
 
 - **Weekly plan** at 08:00 on the first day of each reporting week (normally Monday; Tuesday after a month-end Monday) when office days are still needed, listing suggested dates (preferred weekdays first).
-- **Daily same-day reminder** at the user's reminder time on every eligible weekday while that reporting week's target is incomplete, regardless of preferred days. Dates already logged in office, approved absences and holidays are skipped. Weekly plan suggestions still prefer the selected weekdays, but do not restrict daily reminders. Existing reminder times are retained; review **Daily reminder time** in Settings when moving from day-before reminders. GitHub schedules can be delayed or skipped, so delivery at an exact time is not guaranteed.
+- **Daily same-day reminder** at the user's reminder time on every eligible weekday while that reporting week's target is incomplete, regardless of preferred days. Dates already logged in office, approved absences and holidays are skipped. Weekly plan suggestions still prefer the selected weekdays, but do not restrict daily reminders. Existing reminder times are retained; review **Daily reminder time** in Settings when moving from day-before reminders. The function sends on the first successful check after the configured time; outages, project pausing and phone delivery can still cause delays.
 - **After-office check-in** at the user's check-in time (default 16:00) on any eligible weekday with nothing logged while the week still needs office days, asking them to tick off the day.
 
 Each reminder is claimed in `notification_log` with a unique `email:…` deduplication key before sending, so it also appears in-app and is never sent twice.
@@ -174,9 +174,13 @@ Email setup:
 
 1. Create a free [Resend](https://resend.com) account and an API key. Without a verified domain, Resend's `onboarding@resend.dev` sender can only deliver to the Resend account's own email, so sign up with the same email you use in Office Buddy (or verify a domain and set the `REMINDER_FROM_EMAIL` variable, e.g. `Office Buddy <reminders@yourdomain.com>`).
 2. In the GitHub repo, **Settings → Secrets and variables → Actions → Secrets**, add `RESEND_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (Supabase **Project Settings → API keys → secret/service_role**). Never put the service-role key in `VITE_*` variables or the browser app.
-3. Run **Send office reminders** once manually from the **Actions** tab with **Send a one-off test email** ticked; it should log `sent 1 emails` and the email should arrive.
+3. Add `SUPABASE_ACCESS_TOKEN` as a GitHub repository secret, then run **Deploy Supabase reminders**. The workflow bundles the shared runner for Deno, copies reminder credentials directly into Supabase secrets without printing them, deploys the function, verifies unauthorized calls return 401, and creates the minute-by-minute Cron job. The service-role key is supplied by Supabase's function runtime, not exposed to the browser.
+4. The function uses a dedicated random `REMINDER_CRON_SECRET`, stored in Supabase Vault for the Cron caller and in function secrets for verification. `verify_jwt = false` is intentional: public callers are rejected by the dedicated secret check. Only trusted database administrators should be able to access Vault or `pg_net`'s queued request headers.
+5. Run **Send office reminders** manually with the test option to test enabled delivery channels. Normal runs share deduplication keys with the Edge Function, so they do not resend already claimed reminders.
 
-GitHub may delay scheduled runs, and it disables schedules in public repos after 60 days without commits; re-enable from the Actions tab if that happens. The job without secrets exits successfully and does nothing.
+The Supabase deployment workflow reruns when shared rules or reminder code changes. Keep the deployment token valid for automatic updates, or revoke it after setup and re-add a fresh token before future deployments. Do not place tokens in source control. Missing runtime credentials cause a visible failure.
+
+Monitor `cron.job_run_details` and the Edge Function logs. A successful Cron SQL job confirms an HTTP request was queued, not that it delivered: also check `net._http_response` for HTTP 200 and the returned `checked`, `delivered`, and `failures` counts. Approximately 43,200 monthly function calls fit within the Free plan's 500,000 invocation quota; other limits still apply. Free projects can pause and no exact-time delivery SLA is promised.
 
 ## Troubleshooting
 

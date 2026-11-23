@@ -1,0 +1,51 @@
+name: Deploy Supabase reminders
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - 'scripts/reminder-runner.ts'
+      - 'scripts/build-reminder-function.mjs'
+      - 'scripts/configure-reminder-cron.mjs'
+      - 'src/reminders/**'
+      - 'src/rules/**'
+      - 'src/lib/dates.ts'
+      - '.github/workflows/deploy-reminders.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-supabase-reminders
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_REF: hrlbwdamnqsojtvddicl
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run scripts/send-reminders.test.ts scripts/reminder-function.test.ts src/reminders/planner.test.ts
+      - run: node scripts/build-reminder-function.mjs
+      - run: node scripts/configure-reminder-cron.mjs secrets
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          APP_URL: https://vinishaakuntalo.github.io/office-buddy/
+          REMINDER_FROM_EMAIL: ${{ vars.REMINDER_FROM_EMAIL }}
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase functions deploy send-reminders --project-ref "$SUPABASE_PROJECT_REF"
+      - run: node scripts/configure-reminder-cron.mjs schedule

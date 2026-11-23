@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 
-it('starts the reminder script with real runtime imports without sending notifications', () => {
+it('loads real reminder runtime imports and reports missing configuration as a failure', () => {
   const result = spawnSync(process.execPath, [
     '--import', 'tsx', fileURLToPath(new URL('./send-reminders.ts', import.meta.url)),
   ], {
@@ -19,6 +19,7 @@ it('starts the reminder script with real runtime imports without sending notific
     },
   });
   expect(result.error).toBeUndefined();
-  expect(result.status, result.stderr).toBe(0);
+  expect(result.status, result.stderr).toBe(1);
   expect(result.stdout).toContain('Reminders are not configured');
+  expect(result.stderr).toContain('Reminder configuration is incomplete');
 }, 125000);

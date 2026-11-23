@@ -39,7 +39,7 @@ Raw events remain separate from weekly/monthly calculations. Current summaries a
 
 ## Deployment and free-tier boundaries
 
-GitHub Pages is the primary static host. Cloudflare Pages is a documented alternative. Supabase supplies auth and PostgreSQL. There are no queues, containers, or paid APIs. In-app status notifications are inserted with a user-scoped unique deduplication key when the dashboard is visited. Optional email reminders run from an hourly GitHub Actions workflow (`scripts/send-reminders.ts`) that uses the shared rules engine through `src/reminders/planner.ts`, reads with a service-role key held only as a GitHub secret, claims a unique `notification_log` key, then sends through Resend's free tier.
+GitHub Pages is the primary static host. Cloudflare Pages is a documented alternative. Supabase supplies auth and PostgreSQL. In-app status notifications are inserted with a user-scoped unique deduplication key when the dashboard is visited. Supabase Cron queues an authenticated HTTP request through `pg_net` every minute to the reminder Edge Function. A dedicated caller credential is stored in Vault and function secrets; the function rejects unauthenticated requests. The shared `scripts/reminder-runner.ts` uses `src/reminders/planner.ts`, reads with the function's service-role key, claims a unique `notification_log` key, then sends email through Resend and/or Web Push. The GitHub reminder workflow remains available for manual testing, not scheduling. The deployment workflow copies secrets server-to-server; none enter the static app build.
 
 Free tiers have changing quotas, may pause inactive projects, and are not an unlimited production capacity commitment. Check provider terms before use at higher volume.
 
