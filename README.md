@@ -161,7 +161,7 @@ The static hosts run no background work. Email reminders run separately from Git
 [`.github/workflows/reminders.yml`](.github/workflows/reminders.yml) runs `npm run reminders` hourly. For every user with **Settings → Reminders → Email me office reminders** on, [`scripts/send-reminders.ts`](scripts/send-reminders.ts) evaluates the rules engine in the user's timezone and sends:
 
 - **Weekly plan** at 08:00 on the first day of each reporting week (normally Monday; Tuesday after a month-end Monday) when office days are still needed, listing suggested dates (preferred weekdays first).
-- **Evening-before reminder** at the user's reminder time on the day before each suggested office day. Suggestions are recomputed daily from logged attendance, so skipped days roll forward and reminders continue for the rest of the week until the target is met.
+- **Daily day-before reminder** at the user's reminder time before every eligible weekday while that reporting week's target is incomplete, regardless of preferred days. Dates already logged in office, approved absences and holidays are skipped. Weekly plan suggestions still prefer the selected weekdays, but do not restrict daily reminders.
 - **After-office check-in** at the user's check-in time (default 16:00) on any eligible weekday with nothing logged while the week still needs office days, asking them to tick off the day.
 
 Each reminder is claimed in `notification_log` with a unique `email:…` deduplication key before sending, so it also appears in-app and is never sent twice.

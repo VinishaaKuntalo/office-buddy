@@ -89,11 +89,12 @@ export function planReminders(context: ReminderContext): PlannedReminder[] {
 
   const tomorrow = addDateDays(today, 1);
   const tomorrowResult = evaluateOn(tomorrow, context);
-  if (time >= context.reminderTime.slice(0, 5) && recommendedOfficeDates(tomorrowResult, context.policy).includes(tomorrow)) {
+  if (time >= context.reminderTime.slice(0, 5)
+    && tomorrowResult.remainingOfficeDays > 0 && tomorrowResult.eligibleRemainingDates.includes(tomorrow)) {
     reminders.push({
       deduplicationKey: `email:day-before:${tomorrow}`,
-      title: 'Office day tomorrow',
-      message: `${longDate(tomorrow)} is one of your suggested office days. `
+      title: 'Could tomorrow be an office day?',
+      message: `${longDate(tomorrow)} is an eligible office day, regardless of your preferred days. `
         + `${tomorrowResult.completedOfficeDays + tomorrowResult.creditedDays}/${tomorrowResult.normalRequirement} done, ${days(tomorrowResult.remainingOfficeDays)} still needed this week.`,
     });
   }
