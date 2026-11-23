@@ -87,15 +87,13 @@ export function planReminders(context: ReminderContext): PlannedReminder[] {
     });
   }
 
-  const tomorrow = addDateDays(today, 1);
-  const tomorrowResult = evaluateOn(tomorrow, context);
   if (time >= context.reminderTime.slice(0, 5)
-    && tomorrowResult.remainingOfficeDays > 0 && tomorrowResult.eligibleRemainingDates.includes(tomorrow)) {
+    && todayResult.remainingOfficeDays > 0 && todayResult.eligibleRemainingDates.includes(today)) {
     reminders.push({
-      deduplicationKey: `email:day-before:${tomorrow}`,
-      title: 'Could tomorrow be an office day?',
-      message: `${longDate(tomorrow)} is an eligible office day, regardless of your preferred days. `
-        + `${tomorrowResult.completedOfficeDays + tomorrowResult.creditedDays}/${tomorrowResult.normalRequirement} done, ${days(tomorrowResult.remainingOfficeDays)} still needed this week.`,
+      deduplicationKey: `email:daily:${today}`,
+      title: 'Could today be an office day?',
+      message: `${longDate(today)} is an eligible office day, regardless of your preferred days. `
+        + `${todayResult.completedOfficeDays + todayResult.creditedDays}/${todayResult.normalRequirement} done, ${days(todayResult.remainingOfficeDays)} still needed this week.`,
     });
   }
   return reminders;

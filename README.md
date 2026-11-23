@@ -10,7 +10,7 @@ Office Buddy helps you see how many office days you have completed, what remains
 - Weekly status and recommendation. Approved absences and holidays on eligible weekdays count toward the weekly target (e.g. 2 office days + 1 sick day = 3/3); each can be turned off in Settings.
 - Reporting-month and reporting-week assignment for the final Monday of a month.
 - Responsive calendar, paginated history, settings, CSV preview/import, and in-app status notifications.
-- Optional email reminders (weekly plan, evening-before nudges and an after-office check-in) sent by an hourly GitHub Actions job via Resend.
+- Optional email and push reminders (weekly plan, same-day nudges and an after-office check-in) sent by an hourly GitHub Actions job.
 - PostgreSQL migrations with RLS, constraints, indexes, audit entries, and a per-user account bootstrap trigger.
 
 Browser push, organization administration, and external attendance feeds are not part of this free MVP.
@@ -163,7 +163,7 @@ The static hosts run no background work. Email reminders run separately from Git
 [`.github/workflows/reminders.yml`](.github/workflows/reminders.yml) runs `npm run reminders` hourly. For every user with **Settings → Reminders → Email me office reminders** on, [`scripts/send-reminders.ts`](scripts/send-reminders.ts) evaluates the rules engine in the user's timezone and sends:
 
 - **Weekly plan** at 08:00 on the first day of each reporting week (normally Monday; Tuesday after a month-end Monday) when office days are still needed, listing suggested dates (preferred weekdays first).
-- **Daily day-before reminder** at the user's reminder time before every eligible weekday while that reporting week's target is incomplete, regardless of preferred days. Dates already logged in office, approved absences and holidays are skipped. Weekly plan suggestions still prefer the selected weekdays, but do not restrict daily reminders.
+- **Daily same-day reminder** at the user's reminder time on every eligible weekday while that reporting week's target is incomplete, regardless of preferred days. Dates already logged in office, approved absences and holidays are skipped. Weekly plan suggestions still prefer the selected weekdays, but do not restrict daily reminders. Existing reminder times are retained; review **Daily reminder time** in Settings when moving from day-before reminders. GitHub schedules can be delayed or skipped, so delivery at an exact time is not guaranteed.
 - **After-office check-in** at the user's check-in time (default 16:00) on any eligible weekday with nothing logged while the week still needs office days, asking them to tick off the day.
 
 Each reminder is claimed in `notification_log` with a unique `email:…` deduplication key before sending, so it also appears in-app and is never sent twice.

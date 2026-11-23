@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import webpush from 'web-push';
+import * as webpush from 'web-push';
 import { addDateDays, todayInTimezone } from '../src/lib/dates';
 import { planReminders } from '../src/reminders/planner';
 import type { ApprovedAbsence, AttendanceEvent, AttendancePolicy, Holiday } from '../src/types/domain';
@@ -140,7 +140,7 @@ async function processUser(preference: Preference) {
 
   if (sendTest) {
     return deliver('Office Buddy reminders are set up',
-      `Reminders are working. You'll get a weekly plan at 08:00 on the first day of each reporting week, a reminder at ${reminderTime.slice(0, 5)} the day before every eligible weekday while that week's target is incomplete (not just preferred days), and a check-in at ${checkinTime.slice(0, 5)} on eligible weekdays you haven't logged yet while the week is incomplete (${timezone}).`,
+      `Reminders are working. You'll get a weekly plan at 08:00 on the first day of each reporting week, a same-day reminder at ${reminderTime.slice(0, 5)} on every eligible weekday while that week's target is incomplete (not just preferred days), and a check-in at ${checkinTime.slice(0, 5)} on eligible weekdays you haven't logged yet while the week is incomplete (${timezone}). Exact delivery times depend on the scheduled job.`,
       'test');
   }
   const reminders = planReminders({

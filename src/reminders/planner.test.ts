@@ -16,7 +16,7 @@ const inOffice = (date: string): AttendanceEvent => ({
 
 // November 2026 is UTC-5 in Toronto.
 const plan = (localIso: string, attendance: AttendanceEvent[] = [], overrides: Partial<ReminderContext> = {}) => planReminders({
-  now: new Date(`${localIso}-05:00`), timezone: 'America/Toronto', reminderTime: '17:00:00', checkinTime: '16:00:00',
+  now: new Date(`${localIso}-05:00`), timezone: 'America/Toronto', reminderTime: '10:00:00', checkinTime: '16:00:00',
   policy, policies: [policy], attendance, absences: [], holidays: [], ...overrides,
 } satisfies ReminderContext);
 
@@ -30,13 +30,17 @@ describe('planReminders', () => {
   it('waits until the configured times', () => {
     expect(plan('2026-11-23T07:30:00')).toEqual([]);
     expect(plan('2026-11-23T17:30:00').map((reminder) => reminder.deduplicationKey))
-      .toEqual(['email:weekly-plan:2026-11-23', 'email:checkin:2026-11-23', 'email:day-before:2026-11-24']);
+      .toEqual(['email:weekly-plan:2026-11-23', 'email:checkin:2026-11-23', 'email:daily:2026-11-23']);
+    expect(plan('2026-11-24T09:59:00')).toEqual([]);
+    expect(plan('2026-11-24T10:00:00').map((reminder) => reminder.deduplicationKey))
+      .toEqual(['email:daily:2026-11-24']);
+    expect(plan('2026-11-24T10:00:00', [], { reminderTime: '11:00' })).toEqual([]);
   });
 
   it('keeps reminding for the rest of the week after skipped preferred days', () => {
     // Skipped Tue 24 and Wed 25: Thu 26 and Fri 27 are now both needed.
-    expect(plan('2026-11-25T17:30:00').map((reminder) => reminder.deduplicationKey)).toContain('email:day-before:2026-11-26');
-    expect(plan('2026-11-26T17:30:00').map((reminder) => reminder.deduplicationKey)).toContain('email:day-before:2026-11-27');
+    expect(plan('2026-11-26T10:00:00').map((reminder) => reminder.deduplicationKey)).toContain('email:daily:2026-11-26');
+    expect(plan('2026-11-27T10:00:00').map((reminder) => reminder.deduplicationKey)).toContain('email:daily:2026-11-27');
   });
 
   it('asks for an after-office check-in only on unlogged eligible days of an incomplete week', () => {
@@ -50,33 +54,28 @@ describe('planReminders', () => {
     expect(keys('2026-11-26T16:05:00', done)).not.toContain('email:checkin:2026-11-26');
   });
 
-  it('reminds before every eligible weekday, including non-preferred Monday and Friday', () => {
-    for (const [evening, tomorrow] of [
-      ['2026-11-22', '2026-11-23'],
-      ['2026-11-23', '2026-11-24'],
-      ['2026-11-24', '2026-11-25'],
-      ['2026-11-25', '2026-11-26'],
-      ['2026-11-26', '2026-11-27'],
-    ]) {
-      expect(plan(`${evening}T18:00:00`).map((reminder) => reminder.deduplicationKey))
-        .toContain(`email:day-before:${tomorrow}`);
+  it('reminds on every eligible weekday, including non-preferred Monday and Friday', () => {
+    for (const today of ['2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27']) {
+      const daily = plan(`${today}T10:00:00`).find((reminder) => reminder.deduplicationKey === `email:daily:${today}`);
+      expect(daily?.title).toBe('Could today be an office day?');
+      expect(daily?.message).toContain('is an eligible office day');
     }
   });
 
   it('does not send daily nudges before the configured time or for weekends and office days already logged', () => {
     const nudges = (reminders: ReturnType<typeof plan>) =>
-      reminders.filter((reminder) => reminder.deduplicationKey.startsWith('email:day-before:'));
-    expect(nudges(plan('2026-11-22T16:59:00'))).toEqual([]);
-    expect(nudges(plan('2026-11-27T18:00:00'))).toEqual([]);
+      reminders.filter((reminder) => reminder.deduplicationKey.startsWith('email:daily:'));
+    expect(nudges(plan('2026-11-23T09:59:00'))).toEqual([]);
+    expect(nudges(plan('2026-11-29T18:00:00'))).toEqual([]);
     expect(nudges(plan('2026-11-28T18:00:00'))).toEqual([]);
-    expect(nudges(plan('2026-11-22T18:00:00', [inOffice('2026-11-23')]))).toEqual([]);
-    expect(nudges(plan('2026-11-22T18:00:00', [], {
+    expect(nudges(plan('2026-11-23T10:00:00', [inOffice('2026-11-23')]))).toEqual([]);
+    expect(nudges(plan('2026-11-23T10:00:00', [], {
       absences: [{
         id: 'absence-1', user_id: 'user-1', start_date: '2026-11-23', end_date: '2026-11-23',
         reason: 'Leave', source: 'manual', external_event_id: null, created_at: '', updated_at: '',
       }],
     }))).toEqual([]);
-    expect(nudges(plan('2026-11-22T18:00:00', [], {
+    expect(nudges(plan('2026-11-23T10:00:00', [], {
       holidays: [{
         id: 'holiday-1', user_id: 'user-1', organization_id: null, holiday_date: '2026-11-23',
         name: 'Holiday', source: 'manual', external_event_id: null, created_at: '', updated_at: '',
@@ -86,8 +85,8 @@ describe('planReminders', () => {
 
   it('continues daily reminders for a flexible Monday, Tuesday, Friday attendance pattern', () => {
     const attendance = ['2026-11-23', '2026-11-24'].map(inOffice);
-    expect(plan('2026-11-26T18:00:00', attendance).map((reminder) => reminder.deduplicationKey))
-      .toContain('email:day-before:2026-11-27');
+    expect(plan('2026-11-27T10:00:00', attendance).map((reminder) => reminder.deduplicationKey))
+      .toContain('email:daily:2026-11-27');
     expect(plan('2026-11-27T18:00:00', [...attendance, inOffice('2026-11-27')])).toEqual([]);
   });
 
