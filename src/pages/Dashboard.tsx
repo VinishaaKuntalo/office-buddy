@@ -65,6 +65,7 @@ export function Dashboard() {
 
   const doneDays = result.completedOfficeDays + result.creditedDays;
   const target = result.normalRequirement;
+  const nextAvailableDate = result.eligibleRemainingDates[0];
   const title = result.canChill || result.remainingOfficeDays === 0
     ? 'You can chill'
     : doneDays === 0
@@ -74,8 +75,8 @@ export function Dashboard() {
     ? result.creditedDays > 0
       ? 'Your weekly target is complete, including approved absences or holidays. You can chill for the rest of this week.'
       : 'Your weekly office requirement is complete.'
-    : result.recommendedNextOfficeDate
-      ? `${format(parseISO(`${result.recommendedNextOfficeDate}T00:00:00`), 'EEEE, MMMM d')} is your recommended next office day.`
+    : nextAvailableDate
+      ? `Any eligible weekday works toward your target. Next available: ${format(parseISO(`${nextAvailableDate}T00:00:00`), 'EEEE, MMMM d')}.`
       : 'No eligible office days remain this week. Review your attendance or policy.';
 
   return <>
@@ -84,7 +85,7 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
         <div><div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200"><span className={`size-2 rounded-full ${result.canChill ? 'bg-emerald-300' : result.weeklyStatus === 'At risk' || result.weeklyStatus === 'Action required' ? 'bg-amber-300' : 'bg-blue-300'}`} />{result.weeklyStatus}</div>
           <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2><p className="mt-2 max-w-xl text-slate-300">{message}</p>
-          {result.explanationMessages.length > 0 && <p className="mt-3 max-w-xl text-sm text-slate-300">{result.explanationMessages[0]}</p>}
+          {result.weekly.explanationMessages.length > 0 && <p className="mt-3 max-w-xl text-sm text-slate-300">This week: {result.weekly.explanationMessages[0]}</p>}
         </div>
         <div className="flex items-center gap-4 rounded-2xl bg-white/10 p-4 md:min-w-48 md:flex-col md:gap-1 md:text-center">
           <div className="text-4xl font-bold">{doneDays}<span className="text-slate-400">/{target}</span></div>
@@ -107,11 +108,11 @@ export function Dashboard() {
         <div className="mt-5 grid gap-2" style={{ gridTemplateColumns: `repeat(${weeklyDates.length || 1}, minmax(0, 1fr))` }}>
           {weeklyDates.map((dayDate) => {
             const entry = data.attendance.find((item) => item.event_date === dayDate);
-            const recommended = result.recommendedNextOfficeDate === dayDate;
-            return <div key={dayDate} className={`rounded-xl border p-2 text-center sm:p-3 ${entry?.status === 'in_office' ? 'border-emerald-200 bg-emerald-50' : recommended ? 'border-dashed border-emerald-400 bg-white' : 'border-slate-100 bg-slate-50'}`}>
+            const available = !result.canChill && result.eligibleRemainingDates.includes(dayDate);
+            return <div key={dayDate} className={`rounded-xl border p-2 text-center sm:p-3 ${entry?.status === 'in_office' ? 'border-emerald-200 bg-emerald-50' : available ? 'border-dashed border-emerald-400 bg-white' : 'border-slate-100 bg-slate-50'}`}>
               <div className="text-xs text-slate-500">{format(parseISO(`${dayDate}T00:00:00`), 'EEE')}</div>
               <div className="mt-2 text-sm font-bold text-navy">{parseISO(`${dayDate}T00:00:00`).getDate()}</div>
-              <div className="mt-1 truncate text-[10px] font-medium text-slate-500">{entry?.status === 'in_office' ? 'In office' : recommended ? 'Recommended' : '—'}</div>
+              <div className="mt-1 truncate text-[10px] font-medium text-slate-500">{entry?.status === 'in_office' ? 'In office' : available ? 'Available' : '—'}</div>
             </div>;
           })}
         </div>

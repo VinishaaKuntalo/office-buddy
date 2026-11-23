@@ -102,6 +102,8 @@ The rules engine is pure TypeScript and can be tested without Supabase credentia
 4. The default is three required days, Tuesday–Thursday preferred, Monday–Friday eligible, `America/Toronto`, `en-CA`, and the final-Monday reporting rule.
 5. Add an office day from the dashboard or calendar. Add approved absence and holiday dates from the calendar.
 
+The overview's weekly card shows the next available eligible day and marks all remaining eligible days as available, regardless of preferred weekdays. Its absence/holiday credit explanation uses the weekly target only; monthly credits are shown in Insights.
+
 The browser may retain the Supabase Auth session through the official Supabase client. Attendance, policies, preferences, absences, holidays, notifications, and calculated progress are read from Supabase; they are not stored in localStorage, sessionStorage, IndexedDB, or cookies as application data.
 
 ## 7. Verify PostgreSQL persistence
