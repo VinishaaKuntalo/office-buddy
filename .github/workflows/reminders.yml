@@ -1,9 +1,6 @@
 name: Send office reminders
 
 on:
-  schedule:
-    # Hourly; the script decides per user's timezone what (if anything) is due.
-    - cron: '7 * * * *'
   workflow_dispatch:
     inputs:
       send_test:

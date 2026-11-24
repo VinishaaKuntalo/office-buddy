@@ -10,7 +10,7 @@ Office Buddy helps you see how many office days you have completed, what remains
 - Weekly status and recommendation. Approved absences and holidays on eligible weekdays count toward the weekly target (e.g. 2 office days + 1 sick day = 3/3); each can be turned off in Settings.
 - Reporting-month and reporting-week assignment for the final Monday of a month.
 - Responsive calendar, paginated history, settings, CSV preview/import, and in-app status notifications.
-- Optional email and push reminders (weekly plan, same-day nudges and an after-office check-in) sent by an hourly GitHub Actions job.
+- Optional email and push reminders (weekly plan, same-day nudges and an after-office check-in) checked every minute by Supabase Cron and an Edge Function.
 - PostgreSQL migrations with RLS, constraints, indexes, audit entries, and a per-user account bootstrap trigger.
 
 Browser push, organization administration, and external attendance feeds are not part of this free MVP.
