@@ -9,6 +9,7 @@ on:
       - 'scripts/reminder-runner.ts'
       - 'scripts/build-reminder-function.mjs'
       - 'scripts/configure-reminder-cron.mjs'
+      - 'scripts/configure-reminder-cron.test.js'
       - 'src/reminders/**'
       - 'src/rules/**'
       - 'src/lib/dates.ts'
@@ -35,7 +36,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx vitest run scripts/send-reminders.test.ts scripts/reminder-function.test.ts src/reminders/planner.test.ts
+      - run: npx vitest run scripts/send-reminders.test.ts scripts/reminder-function.test.ts scripts/configure-reminder-cron.test.js src/reminders/planner.test.ts
       - run: node scripts/build-reminder-function.mjs
       - run: node scripts/configure-reminder-cron.mjs secrets
         env:

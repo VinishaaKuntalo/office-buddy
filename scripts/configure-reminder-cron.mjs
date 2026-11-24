@@ -13,11 +13,16 @@ async function management(path, body) {
     body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`Supabase ${path} failed (HTTP ${response.status}).`);
-  return response.status === 204 ? null : response.json();
+  if (path === 'secrets') return;
+  return response.json();
 }
 
 const quote = (value) => `'${value.replaceAll("'", "''")}'`;
-const query = (sql) => management('database/query', { query: sql });
+const query = async (sql) => {
+  const rows = await management('database/query', { query: sql });
+  if (!Array.isArray(rows)) throw new Error('Supabase database/query returned an invalid result.');
+  return rows;
+};
 const endpoint = `https://${project}.supabase.co/functions/v1/send-reminders`;
 
 if (process.argv[2] === 'secrets') {
